@@ -1,0 +1,21 @@
+INCLUDE <../include/std.ap>
+
+
+NAMES rsGCD;
+
+
+rsGCD := rs(x, y) (
+    (x, 0) = x,
+    (0, x) = x,
+    (x < y) -> ((x, y) = rsGCD(x, y mod x)),
+    (x, y) = rsGCD(x mod y, y)
+);
+
+NAME G;
+G := (45, 60);
+
+task := (
+    /*trace(rsGCD);*/
+    applr(G, rsGCD), 
+    prn(G)
+);

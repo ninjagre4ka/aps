@@ -1,0 +1,22 @@
+INCLUDE <../include/std.ap>
+INCLUDE <../include/gen_obj.ap>
+INCLUDE <../include/strat.ap>
+
+
+NAMES sqrt_rs, T;
+
+MARK F(1);
+
+T := F(256);
+
+sqrt_rs := rs(x, y, z)(
+    f(x, y, y) = y,
+    f(x, y, z) = f(x, (y + x / y) / 2, x / y),
+    F(x) = f(x, (x / 2 + x / (x / 2)) / 2, x / (x / 2 + x / (x / 2)) / 2)
+);
+
+task := (
+    trace(sqrt_rs);
+    applytb(T, sqrt_rs),
+    prn(T)
+);

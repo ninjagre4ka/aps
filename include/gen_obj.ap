@@ -1,0 +1,665 @@
+
+NAME if;
+if:=rs(x,y)(
+    (1,x,y) = x,
+    (0,x,y) = y
+);
+
+
+NAMES min,max;
+min:=rs(x,y)(
+(x<y)->((x,y) = x),
+        (x,y) = y
+);
+max:=rs(x,y)(
+(x>y)->((x,y) = x),
+        (x,y) = y
+);
+
+NAME line;
+line:=proc()(
+    put("\n")
+);
+
+
+MARKS isint(1),isnum (1),
+      isname(1),
+      isatom(1),
+      type  (1),
+      equ   (2),
+/*      arglist(1),*/
+      mark(1),
+      new(1),
+      can(1),
+
+      starg(3),
+      sub(2),
+      array(UNDEF),
+
+      dot  (2,62,"."),
+      colon(2, 8,":");
+
+/* 02.07.04. */      
+MARK sequent(2, 18, "=>");
+
+MARKS itr  (2,60,"^*"),
+      caten(2,50,"!" ),
+      parc (2,28,"||" ),
+      cpar (2,56,"|^"),
+      comb (2,59,"><"),
+      ccomb(2,59,">^"),
+      unf  (3),
+      openf(2);
+
+
+
+NAMES lmt,lmt_rec,
+      ntb2,
+      ntb0s,
+      can_right,
+      can_atr,can_atr_up,
+      apply_atr;
+
+NAMES starg_fun,starg_proc;
+starg_fun:=rs(x,i,y)(
+    starg(x,i,y) = starg_proc(x,i,y)
+);
+starg_proc:=proc(x,i,y)(
+    set(x,i,y);
+    return x
+);  
+
+NAME stattr;
+stattr:=proc(x,a,y)(
+    x.a-->y;
+    return x
+);
+
+
+
+
+
+
+
+
+NAME ac_list;
+
+       
+ac_list:= ARRAY(
+
+/* arithm:   comb    iter   neutr  unul           */
+
+           (()><(), ()>^(), nil,    0,    nil),
+           (()||(), ()|^(), Delta,nil,    nil),
+           (()+ (), () $ (), 0,    nil,    nil),
+           (()* (), ()^ (), 1,      0,    nil),
+
+/* logic:    comb    negat  neutr  unul  compl    */
+
+           (()& (), ~(()),  1,      0,      0),
+           (()|/(), ~(()),  0,      1,      1)
+);
+
+NAME conc;
+
+MARKS for(4),
+      forall (2),
+      forallw(3);
+
+
+conc:=rs(x,y,z)(
+          ((x,y),z) = (x,conc(y,z))
+);
+
+NAME is_type;
+is_type:=proc(x,y)(
+         ART(x)>0->return equ(mark(x),mark(y));
+         return(equ(x,y))
+);
+
+
+
+
+ NAMES cur_extcan,defcall,make_markcan,unin; 
+
+defcall:=proc(x)loc(y,z,u,v)(
+    let(x,y z);
+    do(make_markcan(z));
+    let(cur_extcan, rs(u)(v));
+    u:=unin(y,new(u));
+    v:=conc(z,new(v));
+    extcan-->copy(cur_extcan);
+    state()
+);
+
+make_markcan:=rs(x,y,z)(
+    (x=y,z) = (make_markcan(type(x),ec);make_markcan(z)),
+    (x=y  ) =  make_markcan(type(x),ec),
+    (x, ec) =  `(markcan(x,ec))
+);
+
+
+unin:=rs(x,y,z)(
+    ((x,y),z ) = unin(y,unin(x,z)),
+    ( x,(x,z)) = (x,z),
+    ( x, x   ) = x,
+    ( x,(y,z)) = (y,unin(x,z)),
+    ( x, y   ) = (x,y)
+);
+
+NAMES _p,_sp,_ptr,_v;
+_p :=Nil;
+_sp:=Nil;
+_v :=Nil;
+
+MARK case(2);
+
+NAMES set_obj_comp,set_comp,set_path, unrec;
+
+
+
+
+
+
+compile:= rs(x,y,z,u,i)(
+                       define x = `(defcall `(x)),
+ (arg(arg(x,y),z)-->u  ) = compile(arg(x,conc(y,z))-->u),
+    ( arg(x,y)   -->z  ) = `(set_path(x,y,z)),
+    (        x(i)-->z  ) = `(set_path(x,i,z)),
+    (     (x.y.z)-->u  ) = `(_v-->x.y; _v.z-->u),
+    (       (x.y)-->z  ) = `(set_comp(x,y,z)),
+    (          x -->z.u) = set_obj_comp `(x-->z.u),   
+    (          x -->space_node(y,z)) = `(x-->arg(y.space,z)),
+    (          x -->z  ) = `(setname(x,z)),
+
+                   dowhile(x,y) = (x, while(y,x)),
+                   dowhile x y  = (x, while(y,x)),
+                   for(x,y,z,u) = (x, while(y,(u,z))),
+                   loop(x)      = while(1,x),
+
+
+
+
+
+
+                   forall(x in list y, z) =
+                          (_sp-->(_p,_sp);
+                           _p-->y;
+                           while( `(is_type( _p,((),()) ) ),
+                                 x -->arg(_p,1);
+                                 _p-->arg(_p,2);
+                                 z
+                           );
+                           x-->_p;
+                           _p -->arg(_sp,1);
+                           _sp-->arg(_sp,2);
+                           z
+                          ),
+
+
+
+
+
+
+
+                   forall(x in set y, z) =
+                          (_sp-->(_p,_sp);
+                           _p-->y;
+                           while(`(is_type( _p,((),()) ) ),
+                                 x -->arg(_p,1);
+                                 _p-->arg(_p,2);
+                                 z
+                           );
+                           _p -->arg(_sp,1);
+                           _sp-->arg(_sp,2)
+                          ),
+
+
+
+
+
+
+
+
+
+                   forallw(x in list y, u, z) =
+                          (_sp-->(_p,_sp);
+                           _p-->y;
+                           while(`(is_type( _p,((),()) )&u ),
+                                 x -->arg(_p,1);
+                                 _p-->arg(_p,2);
+                                 z
+                           );
+                           x-->_p;
+                           _p -->arg(_sp,1);
+                           _sp-->arg(_sp,2);
+                           u->z
+                          ),
+
+
+
+
+
+
+
+                   forallw(x in set y, u, z) =
+                          (_sp-->(_p,_sp);
+                           _p-->y;
+                           while(`(is_type( _p,((),()) )&u ),
+                                 x -->arg(_p,1);
+                                 _p-->arg(_p,2);
+                                 z
+                           );
+                           _p -->arg(_sp,1);
+                           _sp-->arg(_sp,2)
+                          ),
+
+
+
+
+
+
+
+
+
+                   forall(x=arg(y,i),z) =
+                            for(i-->1,i<= `(ART(y)),i:=i+1,
+                                 x-->arg(y,i); z
+                            ),
+
+
+                   forallw(x=arg(y,i),u,z) =
+                            for(i-->1,(i<= `(ART(y))) & u,i:=i+1,
+                                 x-->arg(y,i); z
+
+                            ),
+
+                   case(x,y->z;u)= starg(x,2,y)->z else case(x,u),
+                   case(x,y->z  )= starg(x,2,y)->z,
+                   case(x,   z  )=               z,
+
+                   branch(y->z;u)= y->z else branch(u),
+                   branch(y->z  )= y->z,
+                   branch(   z  )=    z,
+
+                   case_let x(y->z;u) = `(
+                       let(x,y);
+                       yes->z else case_let x u
+                   ),
+                   case_let x(y->z) = `(
+                       let(x,y);
+                       yes->z
+                   ),
+                   case_let x z = z,
+
+                   iterate_case_let x dowhile y z = `(
+                       y:=1;
+                       dowhile(case_let x z)y
+                   ),
+
+                   iterate_case_let x = loop case_let x,
+ Select x from_list y z = `(
+        iterate_case_let y while(
+            ~(equ(y,Nil)),
+	    (x;y)->z;
+	     x   ->(y-->(x;Nil))
+        )    
+    ),
+                   x = unrec statement new(x)
+
+
+);
+
+unrec:=rs(x)(
+    statement x = `(
+        put("\nunrecognized statement\n"x);
+        wait_ent()
+    )
+);
+
+set_path:=proc(x,p,y)loc(i)(
+    loop(
+    	let(p,(i,p));	
+        yes->(x-->arg(x,i))
+        else(
+	    set(x,p,y);
+            return 1
+        )
+    )
+);
+
+
+/* %%%%%%%%%%%%%%%%%%%%%%  sub, subs  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
+
+NAME sub;
+sub:=proc(x,y)loc(R)(
+    R:=rs()x;
+    y-->new(y);
+    ntb(y,R);
+    return y
+);
+
+NAMES subs,subs_rec,subs_rs;
+subs:=proc(x,y)loc(R)(
+    subs_rs:=rs()x;
+    return subs_rec(y)
+);
+subs_rec:=proc(y)loc(s,i)(
+    y-->new(y);
+    applr(y,subs_rs);
+    yes->return y;
+    forall(s=arg(y,i),
+        arg(y,i)-->subs_rec(s)
+    );
+    return can(y)
+);
+
+/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
+
+
+/*
+rewriten to C++ (unf.cpp) by VG
+*/
+
+
+
+NAME arglist;
+arglist:=proc(x)loc(y,s,i)(
+    y-->Nil;
+    for(i:=ART(x),i>0,i:=i-1,
+        s-->arg(x,i);
+	equ(y,Nil)->y-->s
+        else y-->(s,y)
+    );
+    return y     
+);
+
+
+
+
+/* %%%%%%%%%%%%%%%%%%%%%%  Obj.ap  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
+
+MARK lookup_cm(2),
+     lookup(2); 
+
+NAME found;
+
+found:=rs(x,y)(
+    not_found x = 0,
+    not_found x.y = 0,
+                x = 1
+);
+
+NAMES title_nm,body_nm,not_found_nm,use_nm,index_val_nm,
+      index_nm,rest_nm,comp_nm;
+
+title_nm:=        title;
+body_nm:=         body;
+not_found_nm:=    not_found;
+use_nm:=          use;
+index_val_nm:=    index_val;
+index_nm:=        index;
+rest_nm:=         rest;
+comp_nm:=         comp;
+
+NAME is_in_obj,is_in_cm;
+
+is_in_obj:=rs(x,y,z,u)(
+    (x,y z) = is_in_obj(x,z),
+    (x,(x:y;z)) = 1,
+    (x,(x:y  )) = 1,
+    (x,(u:y;z)) = is_in_obj(x,z),
+    (x,(u:y  )) = 0
+);
+
+is_in_cm:=rs(x,y,z,u)(
+    (x,(x:y,z)) = 1,
+    (x,(x:y  )) = 1,
+    (x,(u:y,z)) = is_in_cm(x,z),
+    (x,(u:y  )) = 0
+);
+
+ NAMES acc_obj,acc_comp,acc_rest; 
+ acc_obj:=rs(a,x,y,z)(
+    ((x:a,z),x) = a,
+    ((y:a,z),x) = acc_obj(z,x),
+    ((y,  z),x) = acc_obj(z,x),
+
+    ((x:a;z),x) = a,
+    ((y:a;z),x) = acc_obj(z,x),
+    ((y;  z),x) = acc_obj(z,x),
+
+    ((x:a  ),x) = a,
+    ((y:a  ),x) = not_found x,
+    ( y,     x) = not_found x
+);
+
+
+acc_comp:=proc(z,x)loc(a,y,u)(
+    iterate_case_let z(
+        (y:a,z)->(
+            equ(y,x)->return(y:a)
+        );
+        (y,  u)->(z-->u);
+        (y:a;z)->(
+            equ(y,x)->return(y:a)
+        );
+        (y;  u)->(z-->u);
+        (y:a  )->(
+	    equ(y,x)->return(y:a);
+            return not_found comp x 
+        );
+        return not_found comp x
+    )
+);
+
+
+acc_rest:=proc(z,x)loc(a,y,u)(
+    iterate_case_let z(
+        (y:a,z)->(
+            equ(y,x)->return(y:a,z)
+        );
+        (y,  u)->(z-->u);
+        (y:a;z)->(
+            equ(y,x)->return(y:a;z)
+        );
+        (y;  u)->(z-->u);
+        (y:a  )->(
+	    equ(y,x)->return (y:a);
+            return not_found rest x 
+        );
+        return not_found rest x
+    )
+);
+
+
+
+ NAME is_obj; 
+ set_obj_comp:=rs(x,y,z,u)(
+    (x-->y.z.u    ) = `(
+	    is_obj(y)->(x-->y.z;x-->x.u)
+            else setname(x,y.z.u)
+	),
+    (x-->y.title  ) = `(let(y,  x _)),
+    (x-->y.body   ) = `(let(y,obj x)),
+    (x-->y.comp  z) = `(
+                           setname(x,y.rest z);
+                           found x->x-->arg(x,1)
+                       ),
+    (x-->y.rest  z) = `(setname(x,y.rest  z)),
+    (x-->y.z      ) = `(
+	    is_obj(y)->(
+                setname(x,y.comp z);
+                found x->x-->arg(x,2)
+	    )else setname(x,y.z)
+	)
+); 
+
+ is_obj:=rs(x)(obj x = 1, x = 0); 
+
+set_comp:=proc(x,y,z)loc(go,Q,S,T)(
+    T-->x.body;
+    loop(
+        case_let T(
+            (S,T)->(
+                let(S,(Q: _));
+                yes->(equ(Q,y)->(set(S,2,z);return 1))
+            );
+            (S;T)->(
+                let(S,(Q: _));
+                yes->(equ(Q,y)->(set(S,2,z);return 1))
+            );
+            (Q: _)->(
+                equ(Q,y)->(set(T,2,z);return 1)
+                else(return 0)
+            );
+            put("\ninfinite loop in set_comp "(x,y,z));wait_ent()
+        )
+    )
+);
+
+NAME del_field;
+
+del_field:=rs(p,q,x,s)(
+    (obj(x:p,q),x) = obj q,
+    (obj(  p,q),x) = obj del_field((p,q),x),
+    ((p, x:s,q),x) = (p,q),
+    ((p,   s,q),x) = (p,del_field((s,q),x)),
+    ((p,   Nil),x) = (p,Nil)
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+NAME assn;
+assn:=rs(a,x,y,z)(
+    (obj x,     y) = obj(assn(x,y)),
+    ((a:x,y),a:=z) = (a:z,y),
+    ((  x,y),a:=z) = (x,assn(y,a:=z)),
+    ( a:x,   a:=z) = (a:z),
+    (   x,   a:=z) = (a:z,x)
+);
+
+/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
+
+NAME prn_list;
+
+prn_list:=proc(x,y)loc(z)(
+    put("\n");z-->x;
+    while(equ(type(z),y),
+        prn(arg(z,1));
+        z-->arg(z,2)
+    );
+    ~(equ(z,Nil))->prn(z);put("\n");
+    return 1
+);
+
+NAME Fdo;
+
+Fdo:=proc(x)(
+    do(x);
+    return 1
+);
+
+
+
+MARKS v0(2),v1(1),v2(1),v3(2),v4(2);
+/* ----------------------------------------------------------------------
+
+    v0(w(x1,...,xn)+(nil),0)=x1+...+xn,             (conv)
+    v0(w(x1,...,xn)*(nil),1)=x1*...*xn,
+
+     v1(w(x1,...,xn)+a)=w(x1+a,...,xn+a),           (distr)
+     v1(w(x1,...,xn)*a)=w(x1*a,...,xn*a)
+
+  v2(w1(w2(x11,...,x1m),...,w2(xn1,...,xnm)))=      (transp)
+     w2(w1(x11,...,xn1),...,w1(x1m,...,xnm))
+
+  v2(w(x1,...,xn)+w(y1,...,yn))=w(x1+y1,...,xn+yn)
+
+  v3(w(x1,...,xn),y)=w(y(x1),...,y(xn))             (supr)
+
+------------------------------------------------------------------------- */
+
+
+NAMES intr_init, armrk;
+
+MARKS conv(2),
+      dstr(1),
+      trsp(1),
+      supr(2);
+
+NAMES iterate,appl_strat;
+/*
+extcan:=rs(x,y,z,rules,strat,term)(
+    (rules^strat)^* term = appl_strat(rules,strat,term),
+     rules^*        term = iterate   (rules,      term),
+               0 .x = 0,
+    ( obj x).body   = x,
+    ( y   x).title  = y,
+    ( obj x).rest y = acc_rest(x,y),
+    ( obj x).comp y = acc_comp(x,y),
+    ( obj x,y).z    = (obj x).z,
+    ( obj x).y.z    = acc_obj(x,y).z,
+    ((obj z).x)     = acc_obj(z,x),
+    ( obj x).y      = acc_obj(x,y)
+);
+*/
+NAMES comma_can, roof_can;
+comma_can:=rs(x,y,z)(
+               0 .x = 0,
+    ( obj x).body   = x,
+    ( y   x).title  = y,
+    ( obj x).rest y = acc_rest(x,y),
+    ( obj x).comp y = acc_comp(x,y),
+    ( obj x,y).z    = (obj x).z,
+    ( obj x).y.z    = acc_obj(x,y).z,
+    ((obj z).x)     = acc_obj(z,x),
+    ( obj x).y      = acc_obj(x,y)
+);
+roof_can:=rs(rules,strat,term)(
+    (rules^strat)^* term = appl_strat(rules,strat,term),
+     rules^*        term = iterate   (rules,      term)
+);
+
+
+appl_strat:=proc(rules,strat,term)loc(u)(
+    rules-->vl(rules);
+    u:=term;
+    strat(u,rules);
+    return u
+);
+
+iterate:=proc(x,y)loc(z)(
+    z:=y;
+    appls(z,vl(x));
+    return z
+);
+
+NAME clean_screen;
+clean_screen:=proc()(
+    put("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+);
+
+intr_init:=proc()(
+    put("\n\n\n======================================= ");
+/*    cur_extcan-->copy(extcan); */
+    markcan(().(), comma_can);
+    markcan(()^*(),roof_can);
+    armrk:=mark(array(()))
+);
+
+

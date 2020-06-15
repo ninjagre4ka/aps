@@ -1,0 +1,65 @@
+INCLUDE <../include/std.ap>
+INCLUDE <../include/gen_obj.ap>
+INCLUDE <../include/strat.ap>
+
+
+NAMES   CANON,
+        CANON2,
+        r, 
+        T;
+
+T := ((2+3)*x*x -  x + (-3) = -2*x - x^2);
+
+MARKS k(3),s(3);
+
+
+CANON := rs(a,b,c,d,x,y,z)
+(
+    isnum(x) -> (x * y = y $ x),
+    isnum(y) -> (x * y = x $ y),
+    isnum(x) -> (x $ y = y * x),
+    a - b = a + (-1) * b,
+    a - b - c = (a - b) - c,
+
+    (a = b) = (a - b),
+
+    a * (b + c) = a * b + a * c,
+    (b + c) * a = a * b + a * c,
+
+    a $ (b + c) = a $ b + a $ c,
+    (b + c) $ a= a $ b + a $ c,
+
+    (a $ b) $ c = a $ (b * c),
+    (a $ b) * (c $ d) = (a * c) $ ( b * d),
+    (a $ b)^c = a^c $ b^c
+
+);
+
+
+CANON2 := rs(a,b,c,dx)
+(
+    isatom(x)->x^2 = x^2 $ 1,
+    (a $ b) $ c = a $ (b * c),
+    (a $ b)^c = a^c $ b^c,
+    isatom(x)->(x = x $ 1)
+
+);
+
+
+r := rs(a,b,c,d)
+(
+    x^2 $ a + x $ b + c = k(a, b, c),
+    x^2 $ a + x $ b = k(a, b, 0),
+    k(a, b, c) = s(b^2 - 4 * a * c, a, b),
+    (d >= 0)-> (s(d, a, b) = ((((-1) * b - d^0.5) / (2 * a)), ((-1) * b + d^0.5) / (2 * a)))
+);
+
+
+task := (
+    prn(T),
+    can_ord(T,CANON, CANON),
+    nbt(T, CANON2),
+    prn(T),
+    appls(T,r),
+    prn(T)
+);

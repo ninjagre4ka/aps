@@ -1,0 +1,26 @@
+NAMES
+    dnf_dn,
+    dnf_up,
+    dnf;
+
+
+dnf_dn :=rs(x,y,z,u,v)(
+    (x |/ y) & (z |/ u) |/ v = x & u |/ y & z |/ y & u |/ x & z |/ v,
+    ((x |/ y) & z) |/ u =  y & z |/ x & z |/ u,
+    x & (y |/ z) |/ u =  x & z |/ x & y |/ u,
+    (x |/ y) & z |/ u = (x & z |/ y & z) |/ x & u |/ y & u,
+    (x |/ y) &  z = ((x & z) |/ (y & z)),
+    x & (y |/  z) = x & y |/ x & z
+);
+
+dnf_up :=rs(x,y,z)(
+    (x |/ y)& z = (x & z) |/ (y & z),
+    x & (y |/ z) = (x & y) |/ (x & z),
+    (x & y) & z =  x & y & z
+);
+
+dnf := proc(x)(
+    eliminate(x),
+    can_ord(x, dnf_dn, dnf_up),
+    return(x)
+);

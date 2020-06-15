@@ -1,0 +1,49 @@
+INCLUDE <../include/std.ap>
+INCLUDE <../include/gen_obj.ap>
+INCLUDE <../include/strat.ap>
+
+INCLUDE <cnf.ap>
+INCLUDE <dnf.ap>
+
+
+NAMES
+    neg_rs,
+    base_rs;
+
+MARKS
+    SHF (2,26,"|"),
+    PRS (2,25,"Y");
+
+
+neg_rs := rs(x)(
+   x = ~(x)
+);
+
+
+base_rs := rs(x, y)(
+    (x <=> y) = ((x -> y) & (y -> x)),
+    (x -> y) = (~(x) |/ y),
+    ~(~(x)) = x,
+    (x & y) = conj_rs(x, y),
+    (x | y) = disj_rs(x, y),
+    (x | y) = (~(x) |/ ~(y)),
+    (x Y y) = (~(x) & ~(y)),
+    ~(~(x)) = x,
+    ~(x |/  y) = (~(x) & ~(y)),
+    ~(x  &  y) = (~(x) |/ ~(y)),
+    ~(x <=> y) = (~(x -> y) |/ ~(y -> x)),
+    ~(x  -> y) = (x & ~(y)),
+    ~(x | y) = (x & y),
+    ~(x Y y) = (x |/ y)
+);
+
+
+
+NAME T;
+T := (1 -> 1);
+
+task := (
+    trace(base_rs);
+    applytb(T, base_rs),
+    prn(T)
+);

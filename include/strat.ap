@@ -1,0 +1,213 @@
+NAMES applytb,appl_tb_rec,applybt,appl_bt_rec;
+
+applytb:=proc(t,R)loc(Y)(
+  dowhile(Y:=appl_tb_rec(t,R),Y)
+);
+
+appl_tb_rec:=proc(t,R)loc(Y,s,i)(
+  appls(t,R);
+  Y:=yes;
+  forall(s=arg(t,i),
+    Y:=appl_tb_rec(s,R)|/Y
+  );
+  t:=can(t);
+  return Y
+);
+
+applybt:=proc(t,R)loc(Y)(
+  dowhile(Y:=appl_bt_rec(t,R),Y)
+);
+
+appl_bt_rec:=proc(t,R)loc(Y,s,i)(
+  Y:=0;
+  forall(s=arg(t,i),
+    Y:=appl_bt_rec(s,R)|/Y
+  );
+  appls(t,R);
+  Y:=yes|/Y;
+  t:=can(t);
+  return Y
+);
+
+
+/*
+Moved to sublib
+appls:=proc(t,R)(
+put("\nappls started t="t);
+    applr(t,R);
+put("\n  first applr t="t);
+    yes->(
+        dowhile(
+put("\ndowhile t="t);
+            applr(t,R)
+;put("\nyes="yes);
+put("\n    new t="t);
+wait_ent()
+        )yes;
+        yes:=1;
+        return 1
+    );
+    return 1
+);
+appls:=proc(t,R)(
+    applr(t,R);
+    yes->(
+        dowhile(
+            applr(t,R)
+        )yes;
+        yes:=1;
+        return 1
+    );
+    return 1
+);
+*/
+
+/* 
+Need optimization. Final 
+
+NAMES nbt,ntb;
+
+
+Moved to sublib
+ntb:=proc(t,R)loc(s,i)(
+    appls(t,R);
+    forall(s=arg(t,i),
+        ntb(s,R)
+    );
+    t:=can(t)
+);
+
+nbt:=proc(t,R)loc(s,i)(
+    forall(s=arg(t,i),
+        nbt(s,R)
+    );
+    appls(t,R);
+    t:=can(t)
+);
+*/
+
+lmt:=proc(t,R)loc(Yes,n)(
+    n:=1;
+    dowhile(
+        Yes:=lmt_rec(t,R);
+        n:=n+1
+    )Yes
+);
+
+lmt_rec:=proc(t,R)loc(Yes,s,i)(
+    t:=can(t);
+    appls(t,R);
+    yes->return(1);
+    forall(s=arg(t,i),
+        Yes:=lmt_rec(s,R);
+        Yes->return(1)
+    );
+    t:=can(t);
+    return(0)
+);
+
+ntb2:=proc(t,R)loc(s,i)(
+          appls(t,R);
+          (ART(t)>0)->ntb2 (arg(t,1),R);
+          t:=can(t);
+          (ART(t)>0)->ntb2 (t,R)
+);
+
+/*
+Moved to sublib
+
+ntb0:=proc(t,R)loc(s,i)(
+    applr(t,R);
+    forall(s=arg(t,i),
+        ntb0(s,R)
+    )
+);
+*/
+
+ntb0s:=proc(t,R)loc(s,i)(
+    appls(t,R);
+    forall(s=arg(t,i),
+        ntb0(s,R)
+    )
+);
+
+can_right:=proc(x,R)(
+    appls(x,R);
+    while(yes,
+        (ART(x)>1)->can_right(arg(x,2),R);
+        appls(x,R)
+    )
+);
+
+
+NAMES can_ord,can_up;
+
+
+can_ord:=proc(t,R1,R2)loc(s,i)(
+    t:=can(t);
+    appls(t,R1);
+    for(i:=1,i<=ART(t),i:=i+1,
+        can_ord(arg(t,i),R1,R2)
+    );
+    can_up(t,R2)
+);
+
+can_up:=proc(t,R)loc(s,i)(
+    appls(t,R);
+    while(yes,
+        for(i:=1,i<=ART(t),i:=i+1,
+            can_up(arg(t,i),R)
+        );
+        appls(t,R)
+    );
+    t:=mrg(can(t))
+);
+
+
+can_atr:=proc(t,R1,R2,m)loc(s,i)(   /* top-bottom R1, bottom-up R2 */
+    appls(t,R1);
+    forall(s=arg(t,i),
+        can_atr(s,R1,R2,m)
+    );
+    can_atr_up(t,R2,m,0)
+);
+
+can_atr_up:=proc(t,R,m,n)loc(s,i)(
+    (n>0)->(
+        forall(s=arg(t,i),
+            can_atr_up(s,R,m,n-1)
+        )
+    );
+    appls(t,R);
+    (yes)->(
+        forall(s=arg(t,i),
+            can_atr_up(s,R,m,m)
+        )
+    )
+);
+
+apply_atr:=proc(t,R1,R2)loc(s,i)(     /* attribute-like str */
+    appls(t,R1);
+    forall(s=arg(t,i),
+        apply_atr(s,R1,R2)
+    );
+    appls(t,R2)
+);
+
+NAME ntr;
+
+ntr:=proc(t,R)loc(s,i)(
+  yes:=1;
+  while(yes,
+     t:=can(t);
+     appls(t,R);
+     yes:=0;
+     forallw(s=arg(t,i), ~(yes),
+        ntr(s,R)
+     )
+  );
+  t:=can(t);
+  appls(t,R)
+);
+
+

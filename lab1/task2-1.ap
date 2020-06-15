@@ -1,0 +1,22 @@
+INCLUDE <../include/std.ap>
+INCLUDE <../include/gen_obj.ap>
+INCLUDE <../include/strat.ap>
+
+
+NAMES fib_rs, T;
+
+MARK F(1);
+
+T := F(7);
+
+fib_rs:=rs(n)(
+    F(0) = 1,
+    F(1) = 1,
+    F(n) = F(n - 1) + F(n - 2)
+);
+
+task := (
+    trace(fib_rs);
+    applytb(T, fib_rs),
+    prn(T)
+);
